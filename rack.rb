@@ -6,12 +6,12 @@ class App
     @env = env
 
     if valid_path?
-      timestamp = TimeStamp.new(query_string)
+      timestamp = TimeStamp.new(request.params["format"])
 
-      if timestamp.bad_request?
-        rack_respone(:bad_request, "Unknown time format [#{timestamp.unknown_list}]")
+      if timestamp.has_invalid?
+        rack_respone(:bad_request, "Unknown time format [#{timestamp.invalid}]")
       else
-        rack_respone(:ok, create_timestamp(timestamp.format))
+        rack_respone(:ok, timestamp.format)
       end
     else
       rack_respone(:not_found, "Page not found")
@@ -22,25 +22,17 @@ class App
 
   def rack_respone(response_msg, body)
     [
-      status_code(response_msg),
+      Rack::Utils.status_code(response_msg),
       {"Content-Type" => "text/html"},
       [body],
     ]
   end
 
+  def request
+    @request = Rack::Request.new(@env)
+  end
+
   def valid_path?
-    Rack::Request.new(@env).path == '/time'
-  end
-
-  def status_code(msg)
-    Rack::Utils.status_code(msg)
-  end
-
-  def query_string
-    Rack::Request.new(@env).params["format"].split(',')
-  end
-
-  def create_timestamp(format)
-    Time.now.strftime(format).to_s
+    request.path == '/time'
   end
 end

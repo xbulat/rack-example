@@ -5,26 +5,29 @@ class TimeStamp
               'hour' => '%H',
               'second' => '%S' }.freeze
 
-  def initialize(query)
-    @query = query
-    @format = []
-    @unknown = []
-    parse!
+  def initialize(params)
+    @params = params.split(',')
   end
 
-  def bad_request?
-    @unknown.any?
+  def has_invalid?
+    invalid_params.any?
   end
 
-  def unknown_list
-    @unknown.join(', ')
+  def invalid
+    invalid_params.join(', ')
   end
 
   def format
-    @format.join('-')
+    Time.now.strftime(valid_params.join('-'))
   end
 
-  def parse!
-    @query.map { |q| FORMATS.include?(q) ? @format << FORMATS.fetch(q) : @unknown << q }
+  private
+
+  def valid_params
+    @params.map { |param| FORMATS.fetch(param, nil) }.compact
+  end
+
+  def invalid_params
+    @params.reject { |param| FORMATS.include?(param) }
   end
 end
